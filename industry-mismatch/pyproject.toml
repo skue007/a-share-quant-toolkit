@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "industry-mismatch"
+version = "1.0.0"
+description = "A股行业错配检测 — 发现官方行业分类与真实业务脱节的股票（双范围联动对比）"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "skue007" },
+]
+keywords = [
+    "quant", "stock", "A股", "量化", "行业错配", "行业分类",
+    "linkage", "baostock", "streamlit",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "baostock>=0.8.8",
+]
+
+[project.optional-dependencies]
+ui = [
+    "streamlit>=1.35.0",
+    "plotly>=5.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+industry-mismatch = "industry_mismatch.cli:main"
+
+[tool.setuptools]
+packages = ["industry_mismatch"]
+
+# 内置数据（行业分类缓存，随 wheel 分发）
+[tool.setuptools.package-data]
+industry_mismatch = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

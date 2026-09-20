@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pattern-screener"
+version = "0.1.0"
+description = "自定义形态选股器 — 从示例K线学习形态，在全A股中做五维Pearson相关性匹配"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "skue007" }]
+keywords = ["quant", "stock", "pattern", "screener", "a-share", "kline"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "requests>=2.28",
+    "pyarrow>=14.0",
+    "pyyaml>=6.0",
+    "mootdx>=1.0.0",
+    "akshare>=1.18.0",
+]
+
+[project.optional-dependencies]
+# 仅使用在线数据源（不需要本地通达信）时的最小依赖
+online-only = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "requests>=2.28",
+    "pyarrow>=14.0",
+    "akshare>=1.18.0",
+]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+pattern-screener = "pattern_screener.cli:main"
+pattern-screener-init-config = "pattern_screener.init_config:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"pattern_screener" = ["templates/*.json", "templates/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

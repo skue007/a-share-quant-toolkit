@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# 测试缓存
+.pytest_cache/
+
+# 环境变量（含敏感信息）
+.env
+
+# Streamlit
+.streamlit/secrets.toml
+
+# 运行时数据
+data/cache/*.tmp
+*.log
+
+# 板块库导入产生的本地文件
+# sector_library.db 是随仓库分发的种子数据，必须入库；
+# 下面这些是运行时生成的备份/元数据，不入库。
+data/*.db.bak
+data/sector_import_meta.json
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# 系统文件
+.DS_Store
+Thumbs.db

@@ -1,0 +1,21 @@
+# 统一换行符，避免跨平台 diff 噪音
+* text=auto eol=lf
+
+# Windows 批处理必须保留 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制文件不做换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.whl binary
+*.parquet binary
+*.db binary
+
+# 语言统计时把生成的/内置数据排除
+industry-mismatch/industry_mismatch/data/industry_map.json linguist-generated=true
+linkage-stock-picker/data/cache/industry_map.json linguist-generated=true

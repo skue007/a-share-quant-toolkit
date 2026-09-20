@@ -1,0 +1,27 @@
+{
+  "date": "2026-08-31",
+  "index": "0.399001",
+  "index_name": "深证成指",
+  "v_reversal": {
+    "low_idx": 85,
+    "peak_idx": 14,
+    "rec_idx": 192,
+    "min_pct": -1.488,
+    "peak_time": "09:44",
+    "low_time": "10:55",
+    "rec_time": "14:12",
+    "decl_depth_pp": 0.97,
+    "end_pct": 0.444,
+    "open_pct": -1.352
+  },
+  "zt_total": 88,
+  "thresholds": {
+    "d_down": 0.8,
+    "vol_ratio": 1.2,
+    "corr": 0.2,
+    "min_zt": 4,
+    "min_decline_min": 15
+  },
+  "qualified": [],
+  "top": []
+}

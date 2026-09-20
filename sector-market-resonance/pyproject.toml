@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sector-resonance"
+version = "0.1.0"
+description = "A股板块-大盘分时共振分析：在 V 型反转日找出与大盘共振最强的行业板块 Top5（数据源：东方财富免费接口，无需 token）"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "skue007" }]
+keywords = [
+    "a-share",
+    "quant",
+    "stock",
+    "sector",
+    "resonance",
+    "eastmoney",
+    "v-reversal",
+    "limit-up",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+ui = ["streamlit>=1.30"]
+dev = ["build", "twine"]
+
+[project.urls]
+Homepage = "https://github.com/skue007/a-share-quant-toolkit/tree/main/sector-market-resonance"
+Issues = "https://github.com/skue007/a-share-quant-toolkit/issues"
+
+[project.scripts]
+sector-resonance = "sector_resonance.core:main"
+sector-resonance-ui = "sector_resonance.ui_entry:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

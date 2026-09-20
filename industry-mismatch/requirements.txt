@@ -1,0 +1,11 @@
+# industry-mismatch 运行依赖
+pandas>=2.0.0
+numpy>=1.24.0
+baostock>=0.8.8
+
+# 可选: 网页界面 (industry-mismatch ui)
+streamlit>=1.35.0
+plotly>=5.0.0
+
+# 可选: 开发测试
+pytest>=7.0.0

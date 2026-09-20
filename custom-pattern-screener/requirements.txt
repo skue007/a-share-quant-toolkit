@@ -1,0 +1,13 @@
+# 核心依赖（pip install -r requirements.txt）
+numpy>=1.24
+pandas>=2.0
+requests>=2.28
+pyarrow>=14.0
+pyyaml>=6.0
+
+# 数据源
+mootdx>=1.0.0     # 本地通达信读取（推荐，本地数据快且稳定）
+akshare>=1.18.0   # 在线数据源（TDX 不可用时自动回退）
+
+# 开发/测试
+pytest>=7.0

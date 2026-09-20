@@ -1,0 +1,103 @@
+{
+  "active_group": "默认形态",
+  "groups": {
+    "默认形态": {
+      "examples": [
+        {
+          "code": "600519",
+          "start": "2024-04-01",
+          "end": "2024-04-15"
+        },
+        {
+          "code": "000858",
+          "start": "2024-04-03",
+          "end": "2024-04-17"
+        }
+      ],
+      "similarity_threshold": 0.7,
+      "max_results": 90,
+      "lookback_days": 60,
+      "price_weight": 0.4,
+      "volume_weight": 0.15,
+      "return_weight": 0.3,
+      "body_weight": 0.1,
+      "shadow_weight": 0.05,
+      "trend_filter": {
+        "enabled": false,
+        "min_return_20d": 0.1,
+        "require_ma5_above_ma10": false
+      },
+      "window_days": null,
+      "ma5_max_growth": 99.0,
+      "pre_crash_max_drop": 0.99,
+      "min_amount": 0.0
+    },
+    "反包": {
+      "examples": [
+        {
+          "code": "002975",
+          "start": "2024-05-10",
+          "end": "2024-05-15"
+        },
+        {
+          "code": "300179",
+          "start": "2024-05-08",
+          "end": "2024-05-15"
+        },
+        {
+          "code": "002407",
+          "start": "2024-03-01",
+          "end": "2024-03-08"
+        }
+      ],
+      "similarity_threshold": 0.56,
+      "max_results": 90,
+      "lookback_days": 120,
+      "price_weight": 0.5,
+      "volume_weight": 0.1,
+      "body_weight": 0.1,
+      "shadow_weight": 0.05,
+      "return_weight": 0.25,
+      "window_days": 4,
+      "ma5_max_growth": 0.05,
+      "pre_crash_max_drop": 0.07,
+      "min_amount": 10.0,
+      "trend_filter": {
+        "enabled": true,
+        "min_return_20d": 0.14,
+        "require_ma5_above_ma10": true
+      }
+    },
+    "趋势回调": {
+      "examples": [
+        {
+          "code": "002281",
+          "start": "2024-03-10",
+          "end": "2024-04-05"
+        },
+        {
+          "code": "002428",
+          "start": "2024-02-20",
+          "end": "2024-03-15"
+        }
+      ],
+      "similarity_threshold": 0.62,
+      "max_results": 60,
+      "lookback_days": 180,
+      "price_weight": 0.3,
+      "volume_weight": 0.15,
+      "body_weight": 0.25,
+      "shadow_weight": 0.15,
+      "return_weight": 0.15,
+      "trend_filter": {
+        "enabled": false,
+        "min_return_20d": 0.1,
+        "require_ma5_above_ma10": true
+      },
+      "window_days": null,
+      "ma5_max_growth": 99.0,
+      "pre_crash_max_drop": 0.99,
+      "min_amount": 0.0
+    }
+  }
+}
