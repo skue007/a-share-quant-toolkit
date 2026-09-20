@@ -2,12 +2,18 @@
 # -*- coding: utf-8 -*-
 """板块-大盘分时共振分析（当日最强共振板块 Top5）。
 
-数据源（东方财富免费接口，无需鉴权）：
-  - 分时走势:  push2his.eastmoney.com /api/qt/stock/trends2/get
-               (支持 ndays 回补历史分时，最多约 5 个交易日；含板块指数 90.BKxxxx)
+数据源（东方财富免费接口，无需鉴权；各接口均配置多个等价节点自动降级）：
+  - 分时走势:  push2his / push2delay 的 /api/qt/stock/trends2/get
+               (push2his 支持 ndays 回补约 5 个交易日历史分时；push2delay 为延时
+                节点，仅返回最近 1 个交易日。两者均支持板块指数 90.BKxxxx)
   - 涨停池:    push2ex.eastmoney.com /getTopicZTPool  (date 参数支持任意历史交易日，
                每条记录带行业板块 hybk 字段)
-  - 行业板块列表: push2.eastmoney.com /api/qt/clist/get  (m:90+t:2)
+  - 行业板块列表: push2 / push2delay 的 /api/qt/clist/get  (m:90+t:2)
+  - 日线(昨收): push2his / push2delay 的 /api/qt/stock/kline/get
+
+东财单个节点在不同网络环境下的可用性差异很大（实测：本机上 push2his 的分时路径被
+路径级切断、而 push2delay 正常；云服务器上 push2 返回 502、push2delay 正常），
+故每个接口按候选节点列表逐一下探，取第一个成功的响应。
 
 共振定义（与需求一一对应）：
   1) 大盘指数大跌后回升至上涨（V 型反转）：
@@ -64,9 +70,21 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 EM_REFERER = "https://quote.eastmoney.com/"
 EMEX_REFERER = "https://quote.eastmoney.com/ztb/detail"
 
-TRENDS_URL = "https://push2his.eastmoney.com/api/qt/stock/trends2/get"
-ZT_URL = "https://push2ex.eastmoney.com/getTopicZTPool"
-BOARD_LIST_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+# 各接口的候选节点（按优先级排序）。curl_json_any() 逐一下探，取第一个成功的响应，
+# 使工具在某个东财节点被阻断/限流时仍能工作。
+TRENDS_URLS = (
+    "https://push2his.eastmoney.com/api/qt/stock/trends2/get",
+    "https://push2delay.eastmoney.com/api/qt/stock/trends2/get",
+)
+KLINE_URLS = (
+    "https://push2his.eastmoney.com/api/qt/stock/kline/get",
+    "https://push2delay.eastmoney.com/api/qt/stock/kline/get",
+)
+BOARD_LIST_URLS = (
+    "https://push2.eastmoney.com/api/qt/clist/get",
+    "https://push2delay.eastmoney.com/api/qt/clist/get",
+)
+ZT_URLS = ("https://push2ex.eastmoney.com/getTopicZTPool",)
 ZT_UT = "7eea3edcaed734bea9cbfc24409ed989"
 
 DEFAULT_INDEX = "1.000001"
@@ -120,9 +138,23 @@ def curl_json(url: str, params: dict, referer: str = EM_REFERER, retries: int = 
     return None
 
 
+def curl_json_any(urls, params: dict, referer: str = EM_REFERER,
+                  retries: int = 3) -> Optional[dict]:
+    """按顺序下探候选节点，返回第一个成功的响应；全部失败返回 None。
+
+    东财各节点互为等价入口，但可用性随网络环境变化，单个节点被阻断或限流时
+    不应导致整次分析失败。
+    """
+    for url in urls:
+        d = curl_json(url, params, referer=referer, retries=retries)
+        if d is not None:
+            return d
+    return None
+
+
 def _fetch_trends_raw(secid: str, ndays: int) -> Optional[dict]:
     """拉取分时原始响应（不经缓存）。"""
-    return curl_json(TRENDS_URL, {
+    return curl_json_any(TRENDS_URLS, {
         "secid": secid,
         "fields1": "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13",
         "fields2": "f51,f52,f53,f54,f55,f56,f57,f58",
@@ -136,7 +168,7 @@ def fetch_kline_preclose(secid: str, date: str) -> Optional[float]:
     cache_file = CACHE_DIR / date / f"{safe}_preclose.txt"
     if cache_file.exists():
         return float(cache_file.read_text(encoding="utf-8").strip())
-    d = curl_json("https://push2his.eastmoney.com/api/qt/stock/kline/get", {
+    d = curl_json_any(KLINE_URLS, {
         "secid": secid,
         "fields1": "f1,f2,f3,f4,f5,f6",
         "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61",
@@ -213,7 +245,7 @@ def fetch_board_list(use_cache: bool = True) -> dict[str, str]:
     out = {}
     pn = 1
     while True:
-        d = curl_json(BOARD_LIST_URL, {
+        d = curl_json_any(BOARD_LIST_URLS, {
             "pn": pn, "pz": 500, "po": 1, "np": 1, "fltt": 2, "invt": 2,
             "fid": "f3", "fs": "m:90+t:2", "fields": "f12,f14",
         })
@@ -238,7 +270,7 @@ def fetch_zt_pool(date: str) -> list[dict]:
         return json.loads(cache_file.read_text(encoding="utf-8"))
     pool, tc, page = [], None, 0
     while True:
-        d = curl_json(ZT_URL, {
+        d = curl_json_any(ZT_URLS, {
             "ut": ZT_UT, "dpt": "wz.ztzt", "Pageindex": page, "pagesize": 100,
             "sort": "fbt:asc", "date": date,
         }, referer=EMEX_REFERER)
@@ -532,9 +564,9 @@ def analyze(date: str | None = None, index: str = DEFAULT_INDEX,
     board_list = fetch_board_list()
     if not board_list:
         raise RuntimeError(
-            "行业板块列表拉取失败（push2.eastmoney.com 无响应）。"
-            "常见原因：东财 rc=102 限流或网络异常，请稍后重试；"
-            "若已有缓存可删除后重跑，或稍等几分钟再试。"
+            "行业板块列表拉取失败（push2 / push2delay 节点均无响应）。"
+            "常见原因：东财 rc=102 限流、该节点被本机网络阻断，或网络异常；"
+            "请稍后重试。"
         )
     name_to_code = {}
     for code, nm in board_list.items():
