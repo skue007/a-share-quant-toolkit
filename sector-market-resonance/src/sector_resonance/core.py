@@ -87,6 +87,14 @@ BOARD_LIST_URLS = (
 ZT_URLS = ("https://push2ex.eastmoney.com/getTopicZTPool",)
 ZT_UT = "7eea3edcaed734bea9cbfc24409ed989"
 
+# ── 配色：遵循 A 股惯例「涨=红、跌=绿」（与欧美相反）──
+COLOR_UP = "#d32f2f"      # 红 —— 上涨 / 回升阶段
+COLOR_DOWN = "#2e7d32"    # 绿 —— 下跌 / 回落阶段
+COLOR_FLAT = "#888888"    # 灰 —— 零轴等辅助线
+COLOR_INDEX = "#111111"   # 黑 —— 大盘指数主线
+# 板块对比曲线配色：刻意避开红/绿，避免被误读为「涨跌」标记
+CURVE_COLORS = ("#2c7fb8", "#8e44ad", "#e67e22", "#5d6d7e", "#6c5ce7", "#795548")
+
 DEFAULT_INDEX = "1.000001"
 INDEX_ALIAS = {
     "1.000001": "上证指数",
@@ -432,18 +440,18 @@ def plot_chart(idx: pd.DataFrame, top: list[dict], curves: dict[str, pd.Series],
     x = np.arange(len(idx))
     fig, ax = plt.subplots(figsize=(13.5, 7.2))
 
-    ax.axvspan(pk, lo, color="#c0392b", alpha=0.06, label="大盘下跌阶段")
-    ax.axvspan(lo, rc, color="#27ae60", alpha=0.08, label="大盘回升阶段")
-    ax.axhline(0, color="#888", lw=0.8, ls="--")
-    ax.axvline(lo, color="#c0392b", lw=1.0, ls=":", alpha=0.8)
-    ax.axvline(rc, color="#27ae60", lw=1.0, ls=":", alpha=0.8)
+    ax.axvspan(pk, lo, color=COLOR_DOWN, alpha=0.07, label="大盘下跌阶段")
+    ax.axvspan(lo, rc, color=COLOR_UP, alpha=0.07, label="大盘回升阶段")
+    ax.axhline(0, color=COLOR_FLAT, lw=0.8, ls="--")
+    ax.axvline(lo, color=COLOR_DOWN, lw=1.0, ls=":", alpha=0.8)
+    ax.axvline(rc, color=COLOR_UP, lw=1.0, ls=":", alpha=0.8)
     ax.annotate(f"最低 {v['low_time']} ({v['min_pct']:.2f}%)", (lo, idx["pct"].iloc[lo]),
-                xytext=(lo + 4, idx["pct"].iloc[lo] - 0.25), fontsize=9, color="#c0392b")
+                xytext=(lo + 4, idx["pct"].iloc[lo] - 0.25), fontsize=9, color=COLOR_DOWN)
     ax.annotate(f"翻红 {v['rec_time']}", (rc, idx["pct"].iloc[rc]),
-                xytext=(rc - 30, idx["pct"].iloc[rc] + 0.15), fontsize=9, color="#27ae60")
+                xytext=(rc - 30, idx["pct"].iloc[rc] + 0.15), fontsize=9, color=COLOR_UP)
 
-    ax.plot(x, idx["pct"], color="#111", lw=2.6, label=f"{index_name}（大盘）", zorder=5)
-    colors = ["#e74c3c", "#e67e22", "#2980b9", "#8e44ad", "#16a085"]
+    ax.plot(x, idx["pct"], color=COLOR_INDEX, lw=2.6, label=f"{index_name}（大盘）", zorder=5)
+    colors = CURVE_COLORS
     for m, c in zip(top, colors):
         s = curves.get(m["name"])
         if s is None:
@@ -482,15 +490,15 @@ def plot_candidates_chart(idx: pd.DataFrame, cand_items: list, curves: dict[str,
     x = np.arange(len(idx))
     fig, ax = plt.subplots(figsize=(13.5, 7.2))
 
-    ax.axvspan(pk, lo, color="#c0392b", alpha=0.06, label="大盘下跌阶段")
-    ax.axvspan(lo, rc, color="#27ae60", alpha=0.08, label="大盘回升阶段")
-    ax.axhline(0, color="#888", lw=0.8, ls="--")
-    ax.axvline(lo, color="#c0392b", lw=1.0, ls=":", alpha=0.8)
+    ax.axvspan(pk, lo, color=COLOR_DOWN, alpha=0.07, label="大盘下跌阶段")
+    ax.axvspan(lo, rc, color=COLOR_UP, alpha=0.07, label="大盘回升阶段")
+    ax.axhline(0, color=COLOR_FLAT, lw=0.8, ls="--")
+    ax.axvline(lo, color=COLOR_DOWN, lw=1.0, ls=":", alpha=0.8)
     ax.annotate(f"最低 {v['low_time']} ({v['min_pct']:.2f}%)", (lo, idx["pct"].iloc[lo]),
-                xytext=(lo + 4, idx["pct"].iloc[lo] - 0.25), fontsize=9, color="#c0392b")
+                xytext=(lo + 4, idx["pct"].iloc[lo] - 0.25), fontsize=9, color=COLOR_DOWN)
 
-    ax.plot(x, idx["pct"], color="#111", lw=2.6, label=f"{index_name}（大盘）", zorder=5)
-    colors = ["#e74c3c", "#e67e22", "#2980b9", "#8e44ad", "#16a085", "#d35400"]
+    ax.plot(x, idx["pct"], color=COLOR_INDEX, lw=2.6, label=f"{index_name}（大盘）", zorder=5)
+    colors = CURVE_COLORS
     for i, item in enumerate(cand_items):
         _, zt_n, code, full = item
         s = curves.get(full)
