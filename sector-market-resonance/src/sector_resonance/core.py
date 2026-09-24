@@ -172,14 +172,70 @@ def curl_json_any(urls, params: dict, referer: str = EM_REFERER,
     return None
 
 
+# 会话级标志：trends2 一旦全灭并成功落到 1 分钟 kline 兜底，后续直接走 kline，
+# 避免对已死路径逐条空枪（每条 4 节点×3 重试的失败突发会反过来触发 IP 限流）。
+_TRENDS_KLINE_FIRST = False
+
+
+def _fetch_trends_via_1min_kline(secid: str, ndays: int) -> Optional[dict]:
+    """trends2 全节点失败时的兜底：用 1 分钟 kline（klt=1）拼出同构分时序列。
+
+    路径级封锁可能单独掐 trends2（/get 与 /sse 全挂）而放过 kline 路径
+    （2026-09-24 实测：push2delay clist 通、trends2 全灭、1 分钟 kline rc=0）。
+    与 trends2 的差异：时间戳为分钟收盘时刻（09:31 起，trends2 为 09:30 起）；
+    vol 单位同为手，仅用于同日内的放量比值，绝对口径差异无影响。
+    返回与 trends2 原始响应同构的 dict：{"data": {"name", "trends": [...]}}。
+    """
+    def _once(lmt: int) -> Optional[dict]:
+        return curl_json_any(KLINE_URLS, {
+            "secid": secid,
+            "fields1": "f1,f2,f3,f4,f5,f6",
+            "fields2": "f51,f52,f53,f54,f55,f56,f57",
+            "klt": "1", "fqt": "1", "end": "20500101", "lmt": str(lmt),
+        }, retries=2)
+
+    # 先按窗口全量取；被掐时降为小请求（大响应更易被重置），仅保当天+昨尾
+    d = _once(ndays * 241 + 10) or _once(260)
+    if not d or not d.get("data"):
+        return None
+    data = d["data"]
+    lines = []
+    for k in data.get("klines", []):
+        parts = k.split(",")
+        if len(parts) < 7:
+            continue
+        ts, o, c, h, low, vol, amt = parts[:7]
+        try:
+            volf, amtf = float(vol), float(amt)
+        except ValueError:
+            continue
+        avg = f"{amtf / volf:.2f}" if volf > 0 else c
+        lines.append(f"{ts},{o},{c},{h},{low},{vol},{amt},{avg}")
+    if not lines:
+        return None
+    return {"data": {"name": data.get("name", secid), "trends": lines}}
+
+
 def _fetch_trends_raw(secid: str, ndays: int) -> Optional[dict]:
-    """拉取分时原始响应（不经缓存）。"""
-    return curl_json_any(TRENDS_URLS, {
-        "secid": secid,
-        "fields1": "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13",
-        "fields2": "f51,f52,f53,f54,f55,f56,f57,f58",
-        "ndays": str(ndays), "iscr": "0",
-    })
+    """拉取分时原始响应（不经缓存）。trends2 全节点失败时回退 1 分钟 kline。"""
+    global _TRENDS_KLINE_FIRST
+    raw = None
+    if not _TRENDS_KLINE_FIRST:
+        # retries=1：多节点已提供冗余；对被掐路径堆重试只会制造失败突发，
+        # 把 IP 打进限流窗口，反而连可用的 kline 兜底一起拖死。
+        raw = curl_json_any(TRENDS_URLS, {
+            "secid": secid,
+            "fields1": "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13",
+            "fields2": "f51,f52,f53,f54,f55,f56,f57,f58",
+            "ndays": str(ndays), "iscr": "0",
+        }, retries=1)
+    if raw and raw.get("data") and raw["data"].get("trends"):
+        return raw
+    fb = _fetch_trends_via_1min_kline(secid, ndays)
+    if fb is not None:
+        _TRENDS_KLINE_FIRST = True
+        return fb
+    return raw
 
 
 def fetch_kline_preclose(secid: str, date: str) -> Optional[float]:
