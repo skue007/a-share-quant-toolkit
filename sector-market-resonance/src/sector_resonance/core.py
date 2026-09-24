@@ -75,10 +75,16 @@ EMEX_REFERER = "https://quote.eastmoney.com/ztb/detail"
 TRENDS_URLS = (
     "https://push2his.eastmoney.com/api/qt/stock/trends2/get",
     "https://push2delay.eastmoney.com/api/qt/stock/trends2/get",
+    # /get 被路径级封锁时，/sse 变体通常仍可用（返回 "data: {...}" 前缀，
+    # curl_json() 已做兼容剥离）
+    "https://push2his.eastmoney.com/api/qt/stock/trends2/sse",
+    "https://push2delay.eastmoney.com/api/qt/stock/trends2/sse",
 )
 KLINE_URLS = (
     "https://push2his.eastmoney.com/api/qt/stock/kline/get",
     "https://push2delay.eastmoney.com/api/qt/stock/kline/get",
+    "https://push2his.eastmoney.com/api/qt/stock/kline/sse",
+    "https://push2delay.eastmoney.com/api/qt/stock/kline/sse",
 )
 BOARD_LIST_URLS = (
     "https://push2.eastmoney.com/api/qt/clist/get",
@@ -126,13 +132,19 @@ def curl_json(url: str, params: dict, referer: str = EM_REFERER, retries: int = 
     for attempt in range(retries):
         limited = False
         try:
+            # 不用 text=True：中文 Windows 默认 GBK 解码，东财返回 UTF-8 会直接
+            # UnicodeDecodeError。手动按 UTF-8 解码并容忍个别坏字节。
             proc = subprocess.run(
                 ["curl", "-s", "-m", "15", full, "-H", f"User-Agent: {UA}", "-H", f"Referer: {referer}"],
-                capture_output=True, text=True, timeout=25,
+                capture_output=True, timeout=25,
             )
-            if proc.returncode != 0 or not proc.stdout.strip():
+            stdout = proc.stdout.decode("utf-8", errors="replace")
+            # 兼容 SSE 变体端点：响应体形如 "data: {...}"，剥掉前缀再解析
+            if stdout.startswith("data:"):
+                stdout = stdout[stdout.index("{"):]
+            if proc.returncode != 0 or not stdout.strip():
                 raise RuntimeError(f"curl rc={proc.returncode} empty")
-            d = json.loads(proc.stdout)
+            d = json.loads(stdout)
             if d is None:
                 raise RuntimeError("null json")
             if isinstance(d, dict) and d.get("rc") not in (None, 0):

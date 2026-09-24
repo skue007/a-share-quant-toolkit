@@ -54,3 +54,11 @@ config/config.yaml
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ───────── 打包产物（packaging/ 只提交脚本与模板，重产物不入库） ─────────
+packaging/portable/python/
+packaging/portable/site-packages/
+packaging/portable/app/
+packaging/portable/_old-cp310-site-packages/
+packaging/portable/streamlit_test.log
+packaging/portable/py313-embed.zip
